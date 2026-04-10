@@ -20,7 +20,7 @@
 [![License](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)](LICENSE)
 
 > A production-quality, end-to-end **Enterprise Compliance Management System** demo built with React 18 + Material UI v5.  
-> Inspired by real-world AMC compliance portals — fully interactive, recruiter-ready.
+> Inspired by real-world AMC compliance portals — fully interactive.
 
 </div>
 
