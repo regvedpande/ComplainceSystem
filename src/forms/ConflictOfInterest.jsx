@@ -1,36 +1,21 @@
 import React, { useState } from 'react'
-import {
-  Box,
-  Paper,
-  Typography,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
-  TextField,
-  Checkbox,
-  FormControl,
-  FormLabel,
-  Select,
-  MenuItem,
-  InputLabel,
-  Divider,
-  Button,
-  Grid,
-  IconButton,
-  Alert,
-} from '@mui/material'
+import { Box, Paper, Typography, Divider, TextField, Checkbox, FormControlLabel,
+  Alert, Grid, MenuItem, Select, FormControl, InputLabel, Button, IconButton,
+  FormLabel, RadioGroup, Radio } from '@mui/material'
 import BalanceIcon from '@mui/icons-material/Balance'
 import AddIcon from '@mui/icons-material/Add'
-import DeleteIcon from '@mui/icons-material/Delete'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import { useApp } from '../context/AppContext'
 import FormWrapper from '../components/FormWrapper'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
 
-const PERIODS = ['Q1 2026', 'Q2 2026', 'Q3 2026', 'Q4 2026']
+const INTEREST_TYPES = ['Equity Shareholding', 'Directorship / Board Seat', 'Partnership Interest', 'Beneficiary of Trust', 'Advisory Role', 'Other Financial Interest']
+const OUTSIDE_TYPES = ['Part-time Employment', 'Consulting / Advisory', 'Board Membership', 'Freelance / Contract Work', 'Family Business', 'Other']
+const RELATION_TYPES = ['Self', 'Spouse', 'Parent', 'Sibling', 'Child', 'In-law', 'Other']
 
-const blankDisclosure = { companyName: '', natureOfInterest: '', holdingPct: '' }
-const blankOutside = { companyName: '', natureOfWork: '', timeCommitment: '' }
+const blankDisclosure = { companyName: '', interestType: '', relation: '', holdingPct: '', remarks: '' }
+const blankOutside = { orgName: '', workType: '', timeCommitment: '', approvalObtained: 'No' }
 
 export default function ConflictOfInterest() {
   const { formStatus, submitForm, submissions } = useApp()
@@ -39,13 +24,16 @@ export default function ConflictOfInterest() {
   const existing = submissions.conflictOfInterest
 
   const [form, setForm] = useState({
-    period: existing?.period || 'Q1 2026',
-    q1: existing?.q1 || 'No',
+    fy: existing?.fy || 'FY 2025–26',
+    hasFinancialInterest: existing?.hasFinancialInterest || 'No',
     disclosures: existing?.disclosures || [{ ...blankDisclosure }],
-    q2: existing?.q2 || 'No',
+    hasOutsideEmployment: existing?.hasOutsideEmployment || 'No',
     outsideEmployment: existing?.outsideEmployment || [{ ...blankOutside }],
-    q3: existing?.q3 || 'No',
-    q4: existing?.q4 || 'No',
+    hasVendorRelation: existing?.hasVendorRelation || 'No',
+    vendorRelationDetails: existing?.vendorRelationDetails || '',
+    hasPendingLitigation: existing?.hasPendingLitigation || 'No',
+    litigationDetails: existing?.litigationDetails || '',
+    nothingToDisclose: existing?.nothingToDisclose || false,
     declaration: existing?.declaration || false,
     signature: existing?.signature || '',
     date: existing?.date || new Date().toISOString().split('T')[0],
@@ -53,204 +41,227 @@ export default function ConflictOfInterest() {
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
 
-  const set = (field) => (e) => {
+  const set = f => e => {
     const val = e.target.type === 'checkbox' ? e.target.checked : e.target.value
-    setForm((p) => ({ ...p, [field]: val }))
-    setErrors((p) => ({ ...p, [field]: undefined }))
+    setForm(p => ({ ...p, [f]: val }))
+    setErrors(p => ({ ...p, [f]: undefined }))
   }
 
-  const setDisclosure = (idx, field) => (e) => {
-    const updated = form.disclosures.map((d, i) => i === idx ? { ...d, [field]: e.target.value } : d)
-    setForm((p) => ({ ...p, disclosures: updated }))
+  const setRow = (arr, idx, field) => e => {
+    const updated = form[arr].map((r, i) => i === idx ? { ...r, [field]: e.target.value } : r)
+    setForm(p => ({ ...p, [arr]: updated }))
   }
-
-  const setOutside = (idx, field) => (e) => {
-    const updated = form.outsideEmployment.map((d, i) => i === idx ? { ...d, [field]: e.target.value } : d)
-    setForm((p) => ({ ...p, outsideEmployment: updated }))
-  }
-
-  const addDisclosure = () => {
-    if (form.disclosures.length < 3) {
-      setForm((p) => ({ ...p, disclosures: [...p.disclosures, { ...blankDisclosure }] }))
-    }
-  }
-
-  const removeDisclosure = (idx) => {
-    setForm((p) => ({ ...p, disclosures: p.disclosures.filter((_, i) => i !== idx) }))
-  }
+  const addRow = arr => () => setForm(p => ({ ...p, [arr]: [...p[arr], arr === 'disclosures' ? { ...blankDisclosure } : { ...blankOutside }] }))
+  const delRow = (arr, idx) => () => setForm(p => ({ ...p, [arr]: p[arr].filter((_, i) => i !== idx) }))
 
   const validate = () => {
     const e = {}
-    if (!form.declaration) e.declaration = 'You must accept the declaration'
+    if (!form.declaration) e.declaration = 'You must confirm the declaration'
     if (!form.signature.trim()) e.signature = 'Digital signature is required'
     setErrors(e)
-    return Object.keys(e).length === 0
+    return !Object.keys(e).length
   }
 
   const handleSubmit = async () => {
-    if (!validate()) {
-      toast.error('Please fill all required fields')
-      return
-    }
+    if (!validate()) { toast.error('Please complete all required fields'); return }
     setSubmitting(true)
-    await new Promise((r) => setTimeout(r, 1000))
+    await new Promise(r => setTimeout(r, 900))
     submitForm('conflictOfInterest', form)
     toast.success('Conflict of Interest Disclosure submitted!')
     navigate('/dashboard')
-    setSubmitting(false)
   }
 
-  const disabled = status === 'submitted'
+  const disabled = status === 'submitted-locked'
 
   return (
     <FormWrapper
       title="Conflict of Interest Disclosure"
-      description="Quarterly disclosure of any personal, financial, or professional interests that may conflict with your duties at UTI AMC."
-      icon={<BalanceIcon />}
-      iconColor="#1565c0"
-      iconBg="#e3f2fd"
-      dueDate="Apr 15, 2026"
-      status={status}
-      submittedAt={existing?.submittedAt}
-      submitting={submitting}
-      onSubmit={handleSubmit}
+      description="Annual disclosure of any personal, financial, or professional interests that may conflict with your duties at Axiom Capital Management. Mandatory under SEBI regulations and company policy."
+      icon={<BalanceIcon />} iconColor="#1565c0" iconBg="#e3f2fd"
+      dueDate="Apr 15" status={status} submittedAt={existing?.submittedAt}
+      submitting={submitting} onSubmit={handleSubmit}
     >
-      {/* Period */}
-      <Paper sx={{ p: 3, mb: 2.5, borderRadius: 3 }}>
-        <Typography variant="subtitle1" fontWeight={700} gutterBottom>Declaration Period</Typography>
-        <Divider sx={{ mb: 2 }} />
-        <FormControl fullWidth>
-          <InputLabel>Period</InputLabel>
-          <Select value={form.period} onChange={set('period')} label="Period" disabled={disabled}>
-            {PERIODS.map((p) => <MenuItem key={p} value={p}>{p}</MenuItem>)}
-          </Select>
-        </FormControl>
-      </Paper>
+      <Alert severity="info" sx={{ mb: 3, borderRadius: 2.5, fontSize: '0.82rem' }}>
+        Disclose all actual, potential, or perceived conflicts of interest for <strong>{form.fy}</strong>. When in doubt, disclose. Undisclosed conflicts may constitute a serious disciplinary offence.
+      </Alert>
 
-      {/* Q1 */}
-      <Paper sx={{ p: 3, mb: 2.5, borderRadius: 3 }}>
-        <Typography variant="subtitle1" fontWeight={700} gutterBottom>Financial Interests</Typography>
+      {/* Financial Interests */}
+      <Paper elevation={0} sx={{ p: 3, mb: 2.5, borderRadius: 3, border: '1px solid rgba(0,0,0,0.06)' }}>
+        <Typography variant="subtitle1" fontWeight={700} gutterBottom>A. Financial Interests in External Entities</Typography>
         <Divider sx={{ mb: 2 }} />
-        <FormControl component="fieldset">
-          <FormLabel sx={{ fontWeight: 600, color: 'text.primary', mb: 1 }}>
-            1. Do you or any immediate family member hold a financial interest (&gt;1%) in any
-            company that does business with UTI AMC?
+        <FormControl component="fieldset" sx={{ mb: 2 }}>
+          <FormLabel sx={{ fontWeight: 600, color: 'text.primary', fontSize: '0.875rem', mb: 1 }}>
+            Do you or any immediate family member hold a financial interest (&gt;1%) in any company that does business with Axiom Capital, or that may be affected by your work?
           </FormLabel>
-          <RadioGroup row value={form.q1} onChange={set('q1')}>
-            <FormControlLabel value="Yes" control={<Radio disabled={disabled} />} label="Yes" />
-            <FormControlLabel value="No" control={<Radio disabled={disabled} />} label="No" />
+          <RadioGroup row value={form.hasFinancialInterest} onChange={set('hasFinancialInterest')}>
+            <FormControlLabel value="No" control={<Radio disabled={disabled} size="small" color="success" />} label={<Typography variant="body2">No</Typography>} />
+            <FormControlLabel value="Yes" control={<Radio disabled={disabled} size="small" color="warning" />} label={<Typography variant="body2">Yes (please declare below)</Typography>} />
           </RadioGroup>
         </FormControl>
 
-        {form.q1 === 'Yes' && (
-          <Box sx={{ mt: 2 }}>
+        {form.hasFinancialInterest === 'Yes' && (
+          <Box>
             {form.disclosures.map((d, idx) => (
-              <Box key={idx} sx={{ p: 2, mb: 1.5, bgcolor: '#f8f9ff', borderRadius: 2, border: '1px solid #e3e7ff' }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>
+              <Box key={idx} sx={{ p: 2, mb: 1.5, borderRadius: 2.5, border: '1px solid rgba(26,35,126,0.12)', bgcolor: '#fafbff' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                   <Typography variant="caption" fontWeight={700} color="primary">Disclosure {idx + 1}</Typography>
-                  {idx > 0 && !disabled && (
-                    <IconButton size="small" onClick={() => removeDisclosure(idx)} color="error">
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  )}
+                  {idx > 0 && !disabled && <IconButton size="small" onClick={delRow('disclosures', idx)} color="error"><DeleteOutlineIcon fontSize="small" /></IconButton>}
                 </Box>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <TextField fullWidth size="small" label="Company Name" value={d.companyName} onChange={setDisclosure(idx, 'companyName')} disabled={disabled} />
-                  </Grid>
+                <Grid container spacing={1.5}>
                   <Grid item xs={12} sm={4}>
-                    <TextField fullWidth size="small" label="Nature of Interest" value={d.natureOfInterest} onChange={setDisclosure(idx, 'natureOfInterest')} disabled={disabled} />
+                    <TextField fullWidth size="small" label="Company / Entity Name" value={d.companyName} onChange={setRow('disclosures', idx, 'companyName')} disabled={disabled} />
                   </Grid>
-                  <Grid item xs={12} sm={2}>
-                    <TextField fullWidth size="small" label="% Holding" value={d.holdingPct} onChange={setDisclosure(idx, 'holdingPct')} type="number" disabled={disabled} />
+                  <Grid item xs={6} sm={3}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Type of Interest</InputLabel>
+                      <Select value={d.interestType} onChange={setRow('disclosures', idx, 'interestType')} label="Type of Interest" disabled={disabled}>
+                        {INTEREST_TYPES.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={6} sm={2}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Relation</InputLabel>
+                      <Select value={d.relation} onChange={setRow('disclosures', idx, 'relation')} label="Relation" disabled={disabled}>
+                        {RELATION_TYPES.map(r => <MenuItem key={r} value={r}>{r}</MenuItem>)}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={6} sm={1}>
+                    <TextField fullWidth size="small" label="% Holding" type="number" value={d.holdingPct} onChange={setRow('disclosures', idx, 'holdingPct')} disabled={disabled} InputProps={{ inputProps: { min: 0, max: 100 } }} />
+                  </Grid>
+                  <Grid item xs={6} sm={2}>
+                    <TextField fullWidth size="small" label="Remarks" value={d.remarks} onChange={setRow('disclosures', idx, 'remarks')} disabled={disabled} />
                   </Grid>
                 </Grid>
               </Box>
             ))}
-            {!disabled && form.disclosures.length < 3 && (
-              <Button startIcon={<AddIcon />} size="small" onClick={addDisclosure} variant="outlined" sx={{ mt: 1 }}>
-                Add More Disclosures
-              </Button>
+            {!disabled && form.disclosures.length < 5 && (
+              <Button startIcon={<AddIcon />} size="small" variant="outlined" onClick={addRow('disclosures')} sx={{ borderRadius: 2, mt: 0.5 }}>Add Disclosure</Button>
             )}
           </Box>
         )}
       </Paper>
 
-      {/* Q2 */}
-      <Paper sx={{ p: 3, mb: 2.5, borderRadius: 3 }}>
-        <Typography variant="subtitle1" fontWeight={700} gutterBottom>Outside Employment</Typography>
+      {/* Outside Employment */}
+      <Paper elevation={0} sx={{ p: 3, mb: 2.5, borderRadius: 3, border: '1px solid rgba(0,0,0,0.06)' }}>
+        <Typography variant="subtitle1" fontWeight={700} gutterBottom>B. Outside Employment / Business Activity</Typography>
         <Divider sx={{ mb: 2 }} />
-        <FormControl component="fieldset">
-          <FormLabel sx={{ fontWeight: 600, color: 'text.primary', mb: 1 }}>
-            2. Are you involved in any outside employment, consulting, or business activity?
+        <FormControl component="fieldset" sx={{ mb: 2 }}>
+          <FormLabel sx={{ fontWeight: 600, color: 'text.primary', fontSize: '0.875rem', mb: 1 }}>
+            Are you engaged in any outside employment, consulting, advisory, or business activity (paid or unpaid)?
           </FormLabel>
-          <RadioGroup row value={form.q2} onChange={set('q2')}>
-            <FormControlLabel value="Yes" control={<Radio disabled={disabled} />} label="Yes" />
-            <FormControlLabel value="No" control={<Radio disabled={disabled} />} label="No" />
+          <RadioGroup row value={form.hasOutsideEmployment} onChange={set('hasOutsideEmployment')}>
+            <FormControlLabel value="No" control={<Radio disabled={disabled} size="small" color="success" />} label={<Typography variant="body2">No</Typography>} />
+            <FormControlLabel value="Yes" control={<Radio disabled={disabled} size="small" color="warning" />} label={<Typography variant="body2">Yes (please declare below)</Typography>} />
           </RadioGroup>
         </FormControl>
-        {form.q2 === 'Yes' && (
-          <Box sx={{ mt: 2 }}>
+
+        {form.hasOutsideEmployment === 'Yes' && (
+          <Box>
             {form.outsideEmployment.map((d, idx) => (
-              <Grid container spacing={2} key={idx} sx={{ mb: 1 }}>
-                <Grid item xs={12} sm={5}>
-                  <TextField fullWidth size="small" label="Company / Organization" value={d.companyName} onChange={setOutside(idx, 'companyName')} disabled={disabled} />
+              <Box key={idx} sx={{ p: 2, mb: 1.5, borderRadius: 2.5, border: '1px solid rgba(26,35,126,0.12)', bgcolor: '#fafbff' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                  <Typography variant="caption" fontWeight={700} color="primary">Activity {idx + 1}</Typography>
+                  {idx > 0 && !disabled && <IconButton size="small" onClick={delRow('outsideEmployment', idx)} color="error"><DeleteOutlineIcon fontSize="small" /></IconButton>}
+                </Box>
+                <Grid container spacing={1.5}>
+                  <Grid item xs={12} sm={4}>
+                    <TextField fullWidth size="small" label="Organisation / Company" value={d.orgName} onChange={setRow('outsideEmployment', idx, 'orgName')} disabled={disabled} />
+                  </Grid>
+                  <Grid item xs={6} sm={3}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Nature of Work</InputLabel>
+                      <Select value={d.workType} onChange={setRow('outsideEmployment', idx, 'workType')} label="Nature of Work" disabled={disabled}>
+                        {OUTSIDE_TYPES.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={6} sm={2}>
+                    <TextField fullWidth size="small" label="Hours/Week" value={d.timeCommitment} onChange={setRow('outsideEmployment', idx, 'timeCommitment')} disabled={disabled} placeholder="e.g. 5 hrs" />
+                  </Grid>
+                  <Grid item xs={12} sm={3}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Compliance Approval Obtained</InputLabel>
+                      <Select value={d.approvalObtained} onChange={setRow('outsideEmployment', idx, 'approvalObtained')} label="Compliance Approval Obtained" disabled={disabled}>
+                        <MenuItem value="Yes">Yes</MenuItem>
+                        <MenuItem value="No">No — Seeking Approval</MenuItem>
+                        <MenuItem value="NA">N/A (Unpaid)</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
                 </Grid>
-                <Grid item xs={12} sm={4}>
-                  <TextField fullWidth size="small" label="Nature of Work" value={d.natureOfWork} onChange={setOutside(idx, 'natureOfWork')} disabled={disabled} />
-                </Grid>
-                <Grid item xs={12} sm={3}>
-                  <TextField fullWidth size="small" label="Time Commitment" value={d.timeCommitment} onChange={setOutside(idx, 'timeCommitment')} placeholder="e.g. 5 hrs/week" disabled={disabled} />
-                </Grid>
-              </Grid>
+              </Box>
             ))}
+            {!disabled && form.outsideEmployment.length < 5 && (
+              <Button startIcon={<AddIcon />} size="small" variant="outlined" onClick={addRow('outsideEmployment')} sx={{ borderRadius: 2, mt: 0.5 }}>Add Activity</Button>
+            )}
           </Box>
         )}
       </Paper>
 
-      {/* Q3 & Q4 */}
-      <Paper sx={{ p: 3, mb: 2.5, borderRadius: 3 }}>
-        <Typography variant="subtitle1" fontWeight={700} gutterBottom>Other Disclosures</Typography>
+      {/* Vendor / Client Relations */}
+      <Paper elevation={0} sx={{ p: 3, mb: 2.5, borderRadius: 3, border: '1px solid rgba(0,0,0,0.06)' }}>
+        <Typography variant="subtitle1" fontWeight={700} gutterBottom>C. Other Disclosures</Typography>
         <Divider sx={{ mb: 2 }} />
-        <Box sx={{ mb: 3 }}>
+
+        <Box sx={{ mb: 2.5 }}>
           <FormControl component="fieldset">
-            <FormLabel sx={{ fontWeight: 600, color: 'text.primary', mb: 1 }}>
-              3. Do you have any personal relationships with vendors or clients of UTI AMC?
+            <FormLabel sx={{ fontWeight: 600, color: 'text.primary', fontSize: '0.875rem', mb: 1 }}>
+              Do you have any personal relationships (family or close friendship) with vendors, clients, or counterparties of the company?
             </FormLabel>
-            <RadioGroup row value={form.q3} onChange={set('q3')}>
-              <FormControlLabel value="Yes" control={<Radio disabled={disabled} />} label="Yes" />
-              <FormControlLabel value="No" control={<Radio disabled={disabled} />} label="No" />
+            <RadioGroup row value={form.hasVendorRelation} onChange={set('hasVendorRelation')}>
+              <FormControlLabel value="No" control={<Radio disabled={disabled} size="small" color="success" />} label={<Typography variant="body2">No</Typography>} />
+              <FormControlLabel value="Yes" control={<Radio disabled={disabled} size="small" color="warning" />} label={<Typography variant="body2">Yes</Typography>} />
             </RadioGroup>
           </FormControl>
+          {form.hasVendorRelation === 'Yes' && (
+            <TextField fullWidth multiline rows={2} size="small" label="Provide details of the relationship *" value={form.vendorRelationDetails} onChange={set('vendorRelationDetails')} disabled={disabled} sx={{ mt: 1.5 }} />
+          )}
         </Box>
-        <FormControl component="fieldset">
-          <FormLabel sx={{ fontWeight: 600, color: 'text.primary', mb: 1 }}>
-            4. Have you received any gifts or hospitality from vendors this quarter?
-          </FormLabel>
-          <RadioGroup row value={form.q4} onChange={set('q4')}>
-            <FormControlLabel value="Yes" control={<Radio disabled={disabled} />} label="Yes" />
-            <FormControlLabel value="No" control={<Radio disabled={disabled} />} label="No" />
-          </RadioGroup>
-        </FormControl>
+
+        <Box>
+          <FormControl component="fieldset">
+            <FormLabel sx={{ fontWeight: 600, color: 'text.primary', fontSize: '0.875rem', mb: 1 }}>
+              Are you or any immediate family member a party to any litigation or regulatory proceedings involving the company or its clients?
+            </FormLabel>
+            <RadioGroup row value={form.hasPendingLitigation} onChange={set('hasPendingLitigation')}>
+              <FormControlLabel value="No" control={<Radio disabled={disabled} size="small" color="success" />} label={<Typography variant="body2">No</Typography>} />
+              <FormControlLabel value="Yes" control={<Radio disabled={disabled} size="small" color="warning" />} label={<Typography variant="body2">Yes</Typography>} />
+            </RadioGroup>
+          </FormControl>
+          {form.hasPendingLitigation === 'Yes' && (
+            <TextField fullWidth multiline rows={2} size="small" label="Provide details of litigation / proceedings *" value={form.litigationDetails} onChange={set('litigationDetails')} disabled={disabled} sx={{ mt: 1.5 }} />
+          )}
+        </Box>
       </Paper>
 
       {/* Declaration */}
-      <Paper sx={{ p: 3, mb: 2.5, borderRadius: 3 }}>
+      <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: '1px solid rgba(0,0,0,0.06)' }}>
         <Typography variant="subtitle1" fontWeight={700} gutterBottom>Declaration & Signature</Typography>
         <Divider sx={{ mb: 2 }} />
-        <Alert severity="info" sx={{ mb: 2, borderRadius: 2, fontSize: '0.82rem' }}>
-          I hereby declare that the above information is complete, accurate, and true. I understand
-          that failure to disclose conflicts of interest may result in disciplinary action.
+        <Alert severity="warning" sx={{ mb: 2.5, borderRadius: 2, fontSize: '0.8rem' }}>
+          I hereby declare that the information provided above is complete, accurate, and true to the best of my knowledge for {form.fy}. I understand that failure to disclose conflicts of interest or providing false information may result in disciplinary action up to and including termination.
         </Alert>
         <FormControlLabel
+          control={<Checkbox checked={form.nothingToDisclose} onChange={set('nothingToDisclose')} disabled={disabled} color="primary" size="small" />}
+          label={<Typography variant="body2">I confirm that I have no additional conflicts of interest to disclose beyond what is stated above.</Typography>}
+          sx={{ mb: 1, display: 'flex', alignItems: 'flex-start', '& .MuiFormControlLabel-label': { mt: 0.4 } }}
+        />
+        <FormControlLabel
           control={<Checkbox checked={form.declaration} onChange={set('declaration')} disabled={disabled} color="primary" />}
-          label={<Typography variant="body2">I confirm the above declaration is accurate and complete. <span style={{ color: 'red' }}>*</span></Typography>}
+          label={<Typography variant="body2">I confirm the above Conflict of Interest Disclosure is complete and accurate. <span style={{ color: 'red' }}>*</span></Typography>}
+          sx={{ display: 'flex', alignItems: 'flex-start', '& .MuiFormControlLabel-label': { mt: 0.4 } }}
         />
         {errors.declaration && <Typography variant="caption" color="error" sx={{ display: 'block', mt: 0.5, ml: 4 }}>{errors.declaration}</Typography>}
-        <Box sx={{ display: 'flex', gap: 2, mt: 2.5, flexWrap: 'wrap' }}>
-          <TextField label="Digital Signature *" value={form.signature} onChange={set('signature')} error={!!errors.signature} helperText={errors.signature || 'Type your full name'} sx={{ flex: 2, minWidth: 200 }} disabled={disabled} />
-          <TextField label="Date" type="date" value={form.date} sx={{ flex: 1, minWidth: 150 }} InputLabelProps={{ shrink: true }} disabled />
-        </Box>
+        <Grid container spacing={2} sx={{ mt: 1.5 }}>
+          <Grid item xs={12} sm={8}>
+            <TextField fullWidth size="small" label="Digital Signature — Type Full Name *" value={form.signature} onChange={set('signature')} error={!!errors.signature} helperText={errors.signature} disabled={disabled} />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <TextField fullWidth size="small" label="Date" type="date" value={form.date} InputLabelProps={{ shrink: true }} disabled />
+          </Grid>
+        </Grid>
       </Paper>
     </FormWrapper>
   )

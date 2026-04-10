@@ -1,58 +1,25 @@
 import React, { useState } from 'react'
-import {
-  Box,
-  Paper,
-  Typography,
-  Checkbox,
-  FormControlLabel,
-  TextField,
-  Divider,
-  Alert,
-} from '@mui/material'
+import { Box, Paper, Typography, Divider, TextField, Checkbox, FormControlLabel, Alert, Grid, LinearProgress } from '@mui/material'
 import GavelIcon from '@mui/icons-material/Gavel'
-import VerifiedUserIcon from '@mui/icons-material/VerifiedUser'
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import { useApp } from '../context/AppContext'
 import FormWrapper from '../components/FormWrapper'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
 
 const SECTIONS = [
-  {
-    id: 'workplaceEthics',
-    title: '1. Workplace Ethics',
-    icon: '🤝',
-    text: `All employees are expected to conduct themselves with the highest standards of professional integrity. This includes treating colleagues, clients, and stakeholders with respect and fairness, avoiding any behaviour that could be considered harassment, discrimination, or bullying. Employees must act in the best interest of UTI AMC at all times and avoid any actions that may damage the company's reputation.`,
-  },
-  {
-    id: 'infoSecurity',
-    title: '2. Information Security',
-    icon: '🔐',
-    text: `Employees must protect all confidential, proprietary, and sensitive information belonging to UTI AMC, its clients, and employees. This includes proper handling of physical and digital data, following IT security protocols, using company systems only for authorised purposes, and promptly reporting any suspected security breach or data loss to the IT security team.`,
-  },
-  {
-    id: 'socialMedia',
-    title: '3. Social Media Policy',
-    icon: '📱',
-    text: `Employees must not post, share, or comment on social media in a manner that could harm UTI AMC's reputation or disclose confidential information. Employees must not represent themselves as official spokespersons of the company unless explicitly authorised. Personal opinions shared online must clearly not be attributed to UTI AMC.`,
-  },
-  {
-    id: 'antiBribery',
-    title: '4. Anti-Bribery Policy',
-    icon: '⚖️',
-    text: `UTI AMC has zero tolerance for bribery and corruption in any form. Employees must not offer, give, request, or receive any bribe, kickback, or improper payment — whether in cash or in kind — to or from any person or entity, including government officials, clients, vendors, or colleagues. Violations will result in immediate disciplinary action and may be reported to regulatory authorities.`,
-  },
-  {
-    id: 'whistleblower',
-    title: '5. Whistleblower Policy',
-    icon: '📣',
-    text: `Employees are encouraged to report genuine concerns about unethical behavior, fraud, or regulatory violations through UTI AMC's confidential whistleblower hotline. All reports will be investigated promptly and confidentially. UTI AMC strictly prohibits retaliation against any employee who reports concerns in good faith. Anonymous reporting is available.`,
-  },
-  {
-    id: 'equalOpportunity',
-    title: '6. Equal Opportunity & Inclusion',
-    icon: '🌈',
-    text: `UTI AMC is committed to providing equal employment opportunities to all individuals regardless of race, gender, religion, nationality, age, disability, or any other protected characteristic. We foster a diverse and inclusive workplace where all employees feel valued and respected. Discrimination of any form is strictly prohibited and subject to disciplinary action.`,
-  },
+  { id: 'ethics', title: 'Workplace Ethics & Integrity', icon: '⚖️',
+    text: 'All employees must conduct themselves with the highest standards of integrity, honesty, and professionalism. You must not engage in or condone unethical practices including misrepresentation, falsification of records, or fraudulent activities. Employees are expected to protect company assets and use them only for legitimate business purposes.' },
+  { id: 'infoSec', title: 'Information Security & Data Privacy', icon: '🔒',
+    text: 'You must protect all confidential and proprietary information of the company, its clients, and counterparties. This includes maintaining strong passwords, not sharing login credentials, reporting security incidents promptly, and complying with the IT security policy. Personal data of clients and employees must be handled in accordance with applicable privacy laws.' },
+  { id: 'antiBribery', title: 'Anti-Bribery & Anti-Corruption', icon: '🚫',
+    text: 'Axiom Capital Management has a zero-tolerance policy for bribery and corruption in any form. You must not offer, promise, give, request, or accept any bribe, kickback, or improper payment to or from any person, including government officials, regulators, clients, or vendors. Facilitation payments are also prohibited regardless of local practice.' },
+  { id: 'socialMedia', title: 'Social Media & Public Communications', icon: '📱',
+    text: 'Employees must not post or comment on matters related to the company, its clients, investments, or regulatory matters on any public platform without prior Compliance approval. You must not make statements construable as market commentary or investment advice on personal social media accounts.' },
+  { id: 'whistleblower', title: 'Whistleblower & Speak-Up Policy', icon: '📢',
+    text: 'Employees are encouraged and protected to report suspected violations of law, regulations, or company policies through the designated whistleblower channel. Reports may be made anonymously. The company strictly prohibits retaliation against anyone who raises concerns in good faith.' },
+  { id: 'conflict', title: 'Conflict of Interest Management', icon: '🔍',
+    text: 'You must proactively identify and disclose potential conflicts of interest to your manager and Compliance. You must not participate in decisions where you have a personal financial interest. Outside employment, board memberships, or advisory roles require prior written Compliance approval.' },
 ]
 
 export default function CodeOfConduct() {
@@ -62,175 +29,112 @@ export default function CodeOfConduct() {
   const existing = submissions.codeOfConduct
 
   const [form, setForm] = useState({
-    acknowledged: existing?.acknowledged || {},
-    masterAck: existing?.masterAck || false,
+    fy: existing?.fy || 'FY 2025–26',
+    sectionAcks: existing?.sectionAcks || SECTIONS.reduce((a, s) => ({ ...a, [s.id]: false }), {}),
+    readFullPolicy: existing?.readFullPolicy || false,
+    masterDeclaration: existing?.masterDeclaration || false,
     signature: existing?.signature || '',
     date: existing?.date || new Date().toISOString().split('T')[0],
   })
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
 
-  const set = (field) => (e) => {
-    const val = e.target.type === 'checkbox' ? e.target.checked : e.target.value
-    setForm((p) => ({ ...p, [field]: val }))
-    setErrors((p) => ({ ...p, [field]: undefined }))
-  }
+  const setAck = id => e => setForm(p => ({ ...p, sectionAcks: { ...p.sectionAcks, [id]: e.target.checked } }))
+  const set = f => e => setForm(p => ({ ...p, [f]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }))
 
-  const toggleSection = (id) => {
-    setForm((p) => ({ ...p, acknowledged: { ...p.acknowledged, [id]: !p.acknowledged[id] } }))
-  }
-
-  const allAcked = SECTIONS.every((s) => form.acknowledged[s.id])
+  const ackedCount = Object.values(form.sectionAcks).filter(Boolean).length
+  const allAcked = ackedCount === SECTIONS.length
 
   const validate = () => {
     const e = {}
-    if (!allAcked) e.sections = 'Please acknowledge all sections of the Code of Conduct'
-    if (!form.masterAck) e.masterAck = 'You must confirm the master acknowledgment'
+    if (!allAcked) e.sections = 'Please acknowledge all policy sections before submitting'
+    if (!form.masterDeclaration) e.masterDeclaration = 'You must confirm the final declaration'
     if (!form.signature.trim()) e.signature = 'Digital signature is required'
     setErrors(e)
-    return Object.keys(e).length === 0
+    return !Object.keys(e).length
   }
 
   const handleSubmit = async () => {
-    if (!validate()) {
-      toast.error('Please acknowledge all sections and fill required fields')
-      return
-    }
+    if (!validate()) { toast.error('Please acknowledge all sections and sign'); return }
     setSubmitting(true)
-    await new Promise((r) => setTimeout(r, 1000))
+    await new Promise(r => setTimeout(r, 900))
     submitForm('codeOfConduct', form)
     toast.success('Code of Conduct Acknowledgment submitted!')
     navigate('/dashboard')
-    setSubmitting(false)
   }
 
-  const disabled = status === 'submitted'
+  const disabled = status === 'submitted-locked'
 
   return (
     <FormWrapper
-      title="Code of Conduct Acknowledgment"
-      description="Annual acknowledgment of UTI AMC's Code of Conduct, covering workplace ethics, data security, anti-bribery, and more."
-      icon={<GavelIcon />}
-      iconColor="#4527a0"
-      iconBg="#ede7f6"
-      dueDate="Apr 10, 2026"
-      status={status}
-      submittedAt={existing?.submittedAt}
-      submitting={submitting}
-      onSubmit={handleSubmit}
+      title="Code of Conduct & Ethics Acknowledgment"
+      description="Annual acknowledgment of the company Code of Conduct covering workplace ethics, information security, anti-bribery, social media, whistleblower, and conflict of interest policies."
+      icon={<GavelIcon />} iconColor="#4527a0" iconBg="#ede7f6"
+      dueDate="Apr 10" status={status} submittedAt={existing?.submittedAt}
+      submitting={submitting} onSubmit={handleSubmit}
     >
-      {errors.sections && (
-        <Alert severity="error" sx={{ mb: 2.5, borderRadius: 2 }}>{errors.sections}</Alert>
-      )}
-
-      {/* Progress indicator */}
-      <Paper sx={{ p: 2.5, mb: 2.5, borderRadius: 3, bgcolor: allAcked ? '#f1f8e9' : '#f8f9ff' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <VerifiedUserIcon color={allAcked ? 'success' : 'disabled'} />
-          <Box>
-            <Typography variant="subtitle2" fontWeight={700}>
-              {SECTIONS.filter((s) => form.acknowledged[s.id]).length} of {SECTIONS.length} sections acknowledged
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Please read and acknowledge each section to proceed.
-            </Typography>
-          </Box>
+      <Paper elevation={0} sx={{ p: 2.5, mb: 3, borderRadius: 3, border: '1px solid rgba(0,0,0,0.06)' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+          <Typography variant="body2" fontWeight={600}>Sections Acknowledged</Typography>
+          <Typography variant="body2" fontWeight={700} color={allAcked ? 'success.main' : 'primary.main'}>{ackedCount} / {SECTIONS.length}</Typography>
         </Box>
+        <LinearProgress variant="determinate" value={(ackedCount / SECTIONS.length) * 100}
+          sx={{ borderRadius: 4, height: 7, bgcolor: 'rgba(0,0,0,0.07)',
+            '& .MuiLinearProgress-bar': { borderRadius: 4, background: allAcked ? 'linear-gradient(90deg,#1b5e20,#43a047)' : 'linear-gradient(90deg,#4527a0,#7b1fa2)' }
+          }}
+        />
+        {errors.sections && <Typography variant="caption" color="error" sx={{ display: 'block', mt: 1 }}>{errors.sections}</Typography>}
       </Paper>
 
-      {/* Individual Sections */}
-      {SECTIONS.map((section) => {
-        const acked = !!form.acknowledged[section.id]
-        return (
-          <Paper
-            key={section.id}
-            sx={{
-              p: 3,
-              mb: 2,
-              borderRadius: 3,
-              border: acked ? '1px solid #c8e6c9' : '1px solid rgba(0,0,0,0.1)',
-              bgcolor: acked ? '#fafff8' : '#fff',
-              transition: 'all 0.2s',
-            }}
-          >
-            <Box sx={{ display: 'flex', gap: 1.5, mb: 1.5 }}>
-              <Typography fontSize="1.3rem">{section.icon}</Typography>
-              <Typography variant="subtitle1" fontWeight={700}>{section.title}</Typography>
+      {SECTIONS.map(section => (
+        <Paper key={section.id} elevation={0} sx={{
+          p: 2.5, mb: 2, borderRadius: 3, transition: 'all 0.2s',
+          border: '1.5px solid', borderColor: form.sectionAcks[section.id] ? '#c8e6c9' : 'rgba(0,0,0,0.07)',
+          bgcolor: form.sectionAcks[section.id] ? '#f1f8e9' : '#fafafa',
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+            <Typography sx={{ fontSize: 20, mt: 0.1, flexShrink: 0 }}>{section.icon}</Typography>
+            <Box sx={{ flexGrow: 1 }}>
+              <Typography variant="subtitle2" fontWeight={700} gutterBottom color={form.sectionAcks[section.id] ? 'success.dark' : 'text.primary'}>
+                {section.title}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5, lineHeight: 1.6 }}>
+                {section.text}
+              </Typography>
+              <FormControlLabel
+                control={<Checkbox checked={form.sectionAcks[section.id]} onChange={setAck(section.id)} disabled={disabled} color="success" size="small" />}
+                label={<Typography variant="body2" fontWeight={600} color={form.sectionAcks[section.id] ? 'success.dark' : 'text.secondary'}>
+                  {form.sectionAcks[section.id] ? '✓ Acknowledged' : 'I have read and understood this policy'}
+                </Typography>}
+              />
             </Box>
-            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7, mb: 2 }}>
-              {section.text}
-            </Typography>
-            <Divider sx={{ mb: 1.5 }} />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={acked}
-                  onChange={() => !disabled && toggleSection(section.id)}
-                  disabled={disabled}
-                  color="success"
-                />
-              }
-              label={
-                <Typography variant="body2" fontWeight={acked ? 700 : 400} color={acked ? 'success.dark' : 'text.primary'}>
-                  {acked ? '✓ I have read and acknowledge this section' : 'I have read and acknowledge this section'}
-                </Typography>
-              }
-            />
-          </Paper>
-        )
-      })}
+            <CheckCircleOutlineIcon sx={{ fontSize: 22, color: form.sectionAcks[section.id] ? 'success.main' : 'text.disabled', flexShrink: 0, mt: 0.2 }} />
+          </Box>
+        </Paper>
+      ))}
 
-      {/* Master Acknowledgment & Signature */}
-      <Paper sx={{ p: 3, mb: 2.5, borderRadius: 3, bgcolor: '#f3e5f5', border: '1px solid #ce93d8' }}>
-        <Typography variant="subtitle1" fontWeight={700} gutterBottom>
-          Master Acknowledgment & Signature
-        </Typography>
+      <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: '1px solid rgba(0,0,0,0.06)' }}>
+        <Typography variant="subtitle1" fontWeight={700} gutterBottom>Final Declaration & Signature</Typography>
         <Divider sx={{ mb: 2 }} />
-        <Alert severity="info" sx={{ mb: 2, borderRadius: 2, fontSize: '0.82rem' }}>
-          By signing below, you confirm that you have read, understood, and agree to comply with
-          UTI AMC's complete Code of Conduct. Violations may result in disciplinary action up to
-          and including termination of employment.
-        </Alert>
         <FormControlLabel
-          control={
-            <Checkbox
-              checked={form.masterAck}
-              onChange={set('masterAck')}
-              disabled={disabled || !allAcked}
-              color="primary"
-            />
-          }
-          label={
-            <Typography variant="body2" fontWeight={600}>
-              I acknowledge having read and understood the complete Code of Conduct and agree to
-              abide by all its terms. <span style={{ color: 'red' }}>*</span>
-            </Typography>
-          }
+          control={<Checkbox checked={form.readFullPolicy} onChange={set('readFullPolicy')} disabled={disabled} color="primary" size="small" />}
+          label={<Typography variant="body2">I confirm I have read the complete Code of Conduct Policy document available on the company intranet.</Typography>}
+          sx={{ mb: 1.5, display: 'flex', alignItems: 'flex-start', '& .MuiFormControlLabel-label': { mt: 0.4 } }}
         />
-        {errors.masterAck && (
-          <Typography variant="caption" color="error" sx={{ display: 'block', mt: 0.5, ml: 4 }}>
-            {errors.masterAck}
-          </Typography>
-        )}
-        <Box sx={{ display: 'flex', gap: 2, mt: 2.5, flexWrap: 'wrap' }}>
-          <TextField
-            label="Digital Signature *"
-            value={form.signature}
-            onChange={set('signature')}
-            error={!!errors.signature}
-            helperText={errors.signature || 'Type your full name as digital signature'}
-            sx={{ flex: 2, minWidth: 200 }}
-            disabled={disabled}
-          />
-          <TextField
-            label="Date"
-            type="date"
-            value={form.date}
-            sx={{ flex: 1, minWidth: 150 }}
-            InputLabelProps={{ shrink: true }}
-            disabled
-          />
-        </Box>
+        <FormControlLabel
+          control={<Checkbox checked={form.masterDeclaration} onChange={set('masterDeclaration')} disabled={disabled} color="primary" />}
+          label={<Typography variant="body2">I acknowledge and agree to abide by Axiom Capital Management's Code of Conduct and all applicable policies. I understand that violations may result in disciplinary action including termination. <span style={{ color: 'red' }}>*</span></Typography>}
+          sx={{ display: 'flex', alignItems: 'flex-start', '& .MuiFormControlLabel-label': { mt: 0.4 } }}
+        />
+        {errors.masterDeclaration && <Typography variant="caption" color="error" sx={{ display: 'block', mt: 0.5, ml: 4 }}>{errors.masterDeclaration}</Typography>}
+        <Grid container spacing={2} sx={{ mt: 2 }}>
+          <Grid item xs={12} sm={8}>
+            <TextField fullWidth size="small" label="Digital Signature — Type Full Name *" value={form.signature} onChange={set('signature')} error={!!errors.signature} helperText={errors.signature} disabled={disabled} />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <TextField fullWidth size="small" label="Date" type="date" value={form.date} InputLabelProps={{ shrink: true }} disabled />
+          </Grid>
+        </Grid>
       </Paper>
     </FormWrapper>
   )

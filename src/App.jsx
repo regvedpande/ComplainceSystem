@@ -4,50 +4,36 @@ import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
 import { Toaster } from 'react-hot-toast'
 import theme from './theme'
-import { AppProvider, useApp } from './context/AppContext'
+import { AppProvider } from './context/AppContext'
 import Layout from './components/Layout/Layout'
-import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Reports from './pages/Reports'
-import AntiFraud from './forms/AntiFraud'
+import AssetLiability from './forms/AssetLiability'
 import ConflictOfInterest from './forms/ConflictOfInterest'
-import NonDisclosure from './forms/NonDisclosure'
-import HRDeclaration from './forms/HRDeclaration'
-import GiftReward from './forms/GiftReward'
-import PropertyDeclaration from './forms/PropertyDeclaration'
+import InsiderTrading from './forms/InsiderTrading'
+import AMLDeclaration from './forms/AMLDeclaration'
+import POSHAcknowledgment from './forms/POSHAcknowledgment'
+import KYEDeclaration from './forms/KYEDeclaration'
 import CodeOfConduct from './forms/CodeOfConduct'
-import RelativeEmployment from './forms/RelativeEmployment'
-
-function ProtectedRoute({ children }) {
-  const { user } = useApp()
-  if (!user) return <Navigate to="/" replace />
-  return children
-}
+import GiftHospitality from './forms/GiftHospitality'
 
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Login />} />
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <Layout />
-          </ProtectedRoute>
-        }
-      >
+      <Route path="/" element={<Layout />}>
+        <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="reports" element={<Reports />} />
-        <Route path="form/anti-fraud" element={<AntiFraud />} />
+        <Route path="form/asset-liability" element={<AssetLiability />} />
         <Route path="form/conflict-of-interest" element={<ConflictOfInterest />} />
-        <Route path="form/non-disclosure" element={<NonDisclosure />} />
-        <Route path="form/hr-declaration" element={<HRDeclaration />} />
-        <Route path="form/gift-reward" element={<GiftReward />} />
-        <Route path="form/property-declaration" element={<PropertyDeclaration />} />
+        <Route path="form/insider-trading" element={<InsiderTrading />} />
+        <Route path="form/aml-declaration" element={<AMLDeclaration />} />
+        <Route path="form/posh-acknowledgment" element={<POSHAcknowledgment />} />
+        <Route path="form/kye-declaration" element={<KYEDeclaration />} />
         <Route path="form/code-of-conduct" element={<CodeOfConduct />} />
-        <Route path="form/relative-employment" element={<RelativeEmployment />} />
+        <Route path="form/gift-hospitality" element={<GiftHospitality />} />
       </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   )
 }
@@ -64,9 +50,11 @@ export default function App() {
             toastOptions={{
               duration: 4000,
               style: {
-                borderRadius: '10px',
+                borderRadius: '12px',
                 fontFamily: 'Inter, sans-serif',
                 fontSize: '14px',
+                fontWeight: 500,
+                boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
               },
               success: {
                 style: { background: '#1b5e20', color: '#fff' },
