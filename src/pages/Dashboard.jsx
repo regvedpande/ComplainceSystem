@@ -41,7 +41,7 @@ function StatusBadge({ status }) {
 
 function StatCard({ title, value, icon, gradient, sub }) {
   return (
-    <Card sx={{ background: gradient, color: '#fff', borderRadius: 3, border: 'none', height: '100%' }}>
+    <Card sx={{ background: gradient, color: '#fff', borderRadius: 2, border: 'none', height: '100%' }}>
       <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Box>
@@ -87,7 +87,7 @@ export default function Dashboard() {
         elevation={0}
         sx={{
           background: 'linear-gradient(135deg, #0d1560 0%, #1a237e 55%, #00695c 100%)',
-          borderRadius: 3, p: { xs: 2.5, sm: 3.5 }, mb: 3, color: '#fff',
+          borderRadius: 2, p: { xs: 2.5, sm: 3.5 }, mb: 3, color: '#fff',
           position: 'relative', overflow: 'hidden', border: 'none',
         }}
       >

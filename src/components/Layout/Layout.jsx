@@ -166,7 +166,12 @@ export default function Layout() {
 
       <Drawer
         variant="permanent"
-        sx={{ display: { xs: 'none', md: 'block' }, '& .MuiDrawer-paper': { width: DRAWER_WIDTH, boxSizing: 'border-box' } }}
+        sx={{
+          display: { xs: 'none', md: 'block' },
+          width: DRAWER_WIDTH,
+          flexShrink: 0,
+          '& .MuiDrawer-paper': { width: DRAWER_WIDTH, boxSizing: 'border-box', borderRadius: 0 },
+        }}
         open
       >
         {drawerContent}
@@ -174,7 +179,7 @@ export default function Layout() {
 
       <Box
         component="main"
-        sx={{ flexGrow: 1, width: { xs: '100%', md: `calc(100% - ${DRAWER_WIDTH}px)` }, minHeight: '100vh' }}
+        sx={{ flexGrow: 1, minWidth: 0, minHeight: '100vh' }}
       >
         <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }} />
         <Box sx={{ p: { xs: 2, sm: 2.5, md: 3 }, maxWidth: 1400, mx: 'auto' }}>

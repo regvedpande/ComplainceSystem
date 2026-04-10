@@ -21,7 +21,7 @@ const theme = createTheme({
     body1: { lineHeight: 1.6 },
     body2: { lineHeight: 1.5 },
   },
-  shape: { borderRadius: 12 },
+  shape: { borderRadius: 8 },
   shadows: [
     'none',
     '0 1px 3px rgba(0,0,0,0.06)',
@@ -39,10 +39,10 @@ const theme = createTheme({
       },
     },
     MuiCard: {
-      styleOverrides: { root: { borderRadius: 16, boxShadow: '0 2px 12px rgba(0,0,0,0.07)', border: '1px solid rgba(0,0,0,0.04)' } },
+      styleOverrides: { root: { borderRadius: 10, boxShadow: '0 1px 6px rgba(0,0,0,0.08)', border: '1px solid rgba(0,0,0,0.06)' } },
     },
     MuiPaper: {
-      styleOverrides: { root: { borderRadius: 16 } },
+      styleOverrides: { root: { borderRadius: 10 } },
     },
     MuiChip: {
       styleOverrides: { root: { fontWeight: 600, fontSize: '0.72rem' } },
@@ -70,7 +70,7 @@ const theme = createTheme({
     },
     MuiDrawer: {
       styleOverrides: {
-        paper: { borderRight: '1px solid rgba(0,0,0,0.07)', backgroundColor: '#ffffff' },
+        paper: { borderRight: '1px solid rgba(0,0,0,0.07)', backgroundColor: '#ffffff', borderRadius: 0 },
       },
     },
     MuiListItemButton: {
