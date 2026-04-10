@@ -9,7 +9,7 @@
 ╚══════╝╚═════╝ ╚═╝          ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚═╝     ╚══════╝╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝╚══════╝
 ```
 
-### UTI Asset Management Company — Regulatory Compliance Portal
+### Asset Management Company — Regulatory Compliance Portal
 
 [![React](https://img.shields.io/badge/React-18.2-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
 [![Material UI](https://img.shields.io/badge/Material_UI-v5.14-0081CB?style=for-the-badge&logo=mui&logoColor=white)](https://mui.com)
@@ -28,7 +28,7 @@
 
 ## What Is This?
 
-In regulated financial companies like UTI Asset Management, employees are legally required to submit compliance declarations every quarter or annually — things like:
+In regulated financial companies like Asset Management, employees are legally required to submit compliance declarations every quarter or annually — things like:
 
 - *"I don't own shares in any competitor"*
 - *"I received no gift worth over ₹1,000"*
